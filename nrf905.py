@@ -169,21 +169,6 @@ class nrf905:
         timeout = time.time()+20
         cdcount = 0
         GPIO.wait_for_edge(NRF_DR, GPIO.RISING);
-#        while time.time() < timeout and GPIO.input(NRF_DR) == GPIO.LOW:
-#            if GPIO.input(NRF_CD) == GPIO.HIGH:
-#                cdcount+=1
-#            time.sleep(0.1)
-#            ss = self.status()
-#            if ss != 0:
-#              print("Status: 0x%0.2x" % ss)
-#                #print("%d Carrier!" % time.time())
-#            #time.sleep(1);
-#        if GPIO.input(NRF_DR) == GPIO.LOW:
-#            print("Timeout(%d)" % cdcount)
-#            print("status= 0x%0.2x" % self.status())
-#            #return []
-
-#        print("status= 0x%0.2x" % self.status())
         GPIO.output(NRF_CE,GPIO.LOW)   
         data = self.rxpayload()
         GPIO.output(NRF_TxEN,GPIO.HIGH)
@@ -200,6 +185,7 @@ class nrf905:
       return spi.transfer((R_TX_ADDRESS,0,0,0,0))
 
 def publish(field,value):
+    print("Update %s : %f" % (field,value))
     params = urllib.urlencode({field: value,'key':API_KEY})
     headers = {"Content-type": "application/x-www-form-urlencoded","Accept":"text/plain"}
     conn = httplib.HTTPConnection("api.thingspeak.com:80", timeout=10)
@@ -220,13 +206,10 @@ if __name__ == '__main__':
     n.rxaddress((0xf0,0xf0,0xf0,0xf0))
     print(n.dumpconfig())
     try:
-        i = 0
+        pubctr = {}
         while True:
-            #print("Listening...")
-            #print(''.join([chr(x) for x in n.receive()]))
-            #print(' '.join([hex(x) for x in n.receive()]))
             pkt = packet.Packet(n.receive());
-            i+=1
+            pubctr[pkt.unitid] = pubctr.get(pkt.unitid,0) + 1
             print("%s PktID: %d UnitID: %d " % (time.ctime(),pkt.packetid,pkt.unitid)),
             for t in range(len(pkt.temperatures)):
                 print("Temp[%d]:%f" %(t,pkt.temperatures[t])),
@@ -234,13 +217,12 @@ if __name__ == '__main__':
                 print(" Battery: %d" % (pkt.batteryok))
             else:
                 print("")
-            #print("%s PktID: %d UnitID: %d Temp: %f Battery: %d" % (time.ctime(),pkt.packetid,pkt.unitid,pkt.temperatures[0],pkt.batteryok))
             for t in range(len(pkt.temperatures)):
                 rrdfile = RRDPATH+'/temp-'+str(pkt.unitid)+'-'+str(t)+'.rrd'
                 rrdtool.update(rrdfile,'N:'+str(pkt.temperatures[t]))
-            if i == 20:
-                publish('field1',pkt.temperatures[0])
-                i=0
+            if pubctr[pkt.unitid] == 10:
+                publish('field'+str(pkt.unitid),pkt.temperatures[0])
+                pubctr[pkt.unitid]=0
     except KeyboardInterrupt:
         print "Interrupt"
     n.shutdown()
