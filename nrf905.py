@@ -220,7 +220,7 @@ if __name__ == '__main__':
             for t in range(len(pkt.temperatures)):
                 rrdfile = RRDPATH+'/temp-'+str(pkt.unitid)+'-'+str(t)+'.rrd'
                 rrdtool.update(rrdfile,'N:'+str(pkt.temperatures[t]))
-            if pubctr[pkt.unitid] == 10:
+            if pubctr[pkt.unitid] == 20:
                 publish('field'+str(pkt.unitid),pkt.temperatures[0])
                 pubctr[pkt.unitid]=0
     except KeyboardInterrupt:
