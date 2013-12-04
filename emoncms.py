@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 
-import urllib, urllib2
+import urllib
+from urllib2 import Request, urlopen, URLError, HTTPError
 
 class emoncms:
     def __init__(self,key=None,url='http://emoncms.org/input/post.json'):
@@ -15,7 +16,7 @@ class emoncms:
         url_values = urllib.urlencode(data)
         url = self.url+'?'+url_values
         print(url)
-        try: response = urllib2.urlopen(url)
+        try: response = urlopen(url)
         except HTTPError as e:
             print 'The server couldn\'t fulfill the request.'
             print 'Error code: ', e.code
