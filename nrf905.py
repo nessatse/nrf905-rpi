@@ -6,11 +6,6 @@ import spi
 import time
 import sys
 import packet
-import rrdtool
-import httplib, urllib
-
-API_KEY = 'OL2AGFP0E2PF7R4A'
-RRDPATH='/home/pi/tempmon'
 
 NRF_CE=3
 NRF_TxEN=5
@@ -116,7 +111,6 @@ class nrf905:
         self.wr_config(W_CONFIG|NRF905_REG_RX_PAYLOAD_SIZE,32)
         self.wr_config(W_CONFIG|NRF905_REG_TX_PAYLOAD_SIZE,32)
         self.wr_config(W_CONFIG|9,(NRF905_CRC_MODE_16|NRF905_CRC_ENABLE|NRF905_XOF_16))
-        #self.wr_config(W_CONFIG|9,(NRF905_CRC_MODE_16|NRF905_CRC_ENABLE|NRF905_XOF_16))
         self.powerup()
         
     def powerup(self):
@@ -133,7 +127,6 @@ class nrf905:
 
     def dumpconfig(self):
         GPIO.output(NRF_CSN,0)
-        #cfg = self._spi.xfer([R_COONFIG,5,6,3,4,0,0,0,0,0,0])
         cfg = spi.transfer((R_CONFIG,0,0,0,0,0,0,0,0,0,0))
         GPIO.output(NRF_CSN,1)
         print("STATUS  = 0x%0.2x" % cfg[0])
@@ -186,46 +179,12 @@ class nrf905:
     def dumptxaddr(self):
       return spi.transfer((R_TX_ADDRESS,0,0,0,0))
 
-def publish(field,value):
-    print("Update %s : %f" % (field,value))
-    params = urllib.urlencode({field: value,'key':API_KEY})
-    headers = {"Content-type": "application/x-www-form-urlencoded","Accept":"text/plain"}
-    conn = httplib.HTTPConnection("api.thingspeak.com:80", timeout=10)
-    conn.request("POST", "/update", params, headers)
-    response = conn.getresponse()
-    print response.status, response.reason
-    data = response.read()
-    conn.close()
-    return data
-
 if __name__ == '__main__':
     print("Hello")
     n=nrf905()
-    #n.powerup()
     print(n.dumpconfig())
     n.configure()
-#    n.rxaddress((0x5a,0xa5,0x5a,0xa5))
     n.rxaddress((0xf0,0xf0,0xf0,0xf0))
     print(n.dumpconfig())
-    try:
-        pubctr = {}
-        while True:
-            pkt = packet.Packet(n.receive());
-            pubctr[pkt.unitid] = pubctr.get(pkt.unitid,0) + 1
-            print("%s PktID: %d UnitID: %d " % (time.ctime(),pkt.packetid,pkt.unitid)),
-            for t in range(len(pkt.temperatures)):
-                print("Temp[%d]:%f" %(t,pkt.temperatures[t])),
-            if pkt.batteryok is not None:
-                print(" Battery: %d" % (pkt.batteryok))
-            else:
-                print("")
-            for t in range(len(pkt.temperatures)):
-                rrdfile = RRDPATH+'/temp-'+str(pkt.unitid)+'-'+str(t)+'.rrd'
-                rrdtool.update(rrdfile,'N:'+str(pkt.temperatures[t]))
-            if pubctr[pkt.unitid] == 20:
-                publish('field'+str(pkt.unitid),pkt.temperatures[0])
-                pubctr[pkt.unitid]=0
-    except KeyboardInterrupt:
-        print "Interrupt"
     n.shutdown()
     print("Bye")
