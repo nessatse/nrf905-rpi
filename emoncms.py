@@ -2,6 +2,7 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4 
 import urllib
 from urllib2 import Request, urlopen, URLError, HTTPError
+import socket
 
 class emoncms:
     def __init__(self,key=None,url='http://emoncms.org/input/post.json'):
@@ -18,11 +19,13 @@ class emoncms:
         print(url)
         try: response = urlopen(url)
         except HTTPError as e:
-            print 'The server couldn\'t fulfill the request.'
-            print 'Error code: ', e.code
+            print('The server couldn\'t fulfill the request.')
+            print('Error code: ', e.code)
         except URLError as e:
-            print 'We failed to reach a server.'
-            print 'Reason: ', e.reason
+            print('We failed to reach a server.')
+            print('Reason: ', e.reason)
+        except socket.timeout as e:
+            print('Timeout Error')
         else:
             rc = response.read()
             if rc != 'ok':
