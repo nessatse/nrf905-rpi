@@ -41,7 +41,7 @@ if __name__ == '__main__':
                     rrdtool.update(rrdfile,'N:'+str(pkt.temperatures[t]))
                 except rrdtool.error as e:
                     print(("RRD Update Error: %s" % e.message))
-                    if (re.search("No such file or directory",e.message):
+                    if (re.search("No such file or directory",e.message)):
                         createrrd(rrdfile);
                         rrdtool.update(rrdfile,'N:'+str(pkt.temperatures[t]))
             if pubctr[pkt.unitid] == 5:

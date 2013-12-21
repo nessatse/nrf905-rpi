@@ -1,5 +1,5 @@
 #! /bin/sh
-rrdtool create temp-1-0.rrd --start 1386194444 --step 30 \
+rrdtool create temp-1-1.rrd --start 1386194444 --step 30 \
              DS:temp:GAUGE:300:-1.0000000000e+01:1.0000000000e+02 \
              RRA:AVERAGE:0.5:1:518400 \
              RRA:AVERAGE:0.5:10:207360 \
